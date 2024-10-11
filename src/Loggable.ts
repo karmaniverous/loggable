@@ -1,69 +1,39 @@
-import { isFunction, mapValues } from 'radash';
+import { isFunction, mapValues, shake } from 'radash';
 
-import { conditionalize } from './conditionalize';
-import { Constructor } from './Constructor';
-import { LoggableOptions } from './LoggableOptions';
-
-type LoggerEndpoint = (...args: unknown[]) => void;
-
-const conditionalizeLogger = <Logger>({
-  internal,
-  logger,
-  logInternals,
-}: LoggableOptions<Logger>): Logger =>
-  mapValues(logger as Record<string, unknown>, (value, key) => {
-    if (!internal?.includes(key)) return value;
-
-    if (!isFunction(value))
-      throw new Error(`logger must support ${key} method`);
-
-    return conditionalize(value as LoggerEndpoint, logInternals);
-  }) as Logger;
-
-const defaultLoggableOptions = {
-  internal: ['debug'],
-  logger: console,
-  logInternals: false,
-};
+import type { Constructor } from './Constructor';
+import type { LoggableOptions } from './LoggableOptions';
+import type { LoggerEndpoint } from './LoggerEndpoint';
+import type { Methods } from './Methods';
 
 /**
- * Loggable mixin.
+ * Loggable mixin. Adds external logger to base class or serves as base class to add external logger to derived class.
  *
- * @param Base - Base class.
- * @param options - Loggable options.
+ * @param Base - Base class (defaults to empty class).
+ * @param logger - Logger object (defaults to `console`).
+ * @param options - LoggableOptions object (defaults to `{ disabled: ['debug'] }`).
  *
- * @returns
+ * @returns Loggable class.
  */
 export function Loggable<T extends Constructor<object>, Logger = Console>(
   // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   Base: T = class {} as T,
-  options: Partial<LoggableOptions<Logger>> = defaultLoggableOptions as Partial<
-    LoggableOptions<Logger>
-  >,
+  logger: Logger = console as Logger,
+  options: LoggableOptions = {
+    disabled: ['debug'],
+    enableAll: false,
+  },
 ) {
   return class extends Base {
-    #loggable = {
-      ...defaultLoggableOptions,
-      ...options,
-    } as LoggableOptions<Logger>;
+    loggableOptions = options;
 
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    constructor(...args: any[]) {
-      // eslint-disable-next-line @typescript-eslint/no-unsafe-argument
-      super(...args);
-      this.#loggable.logger = conditionalizeLogger(this.#loggable);
-    }
-
-    get loggable() {
-      return this.#loggable;
-    }
-
-    setLoggable(options: Partial<LoggableOptions<Logger>>) {
-      this.#loggable = { ...this.#loggable, ...options };
-
-      if (options.logger) {
-        this.#loggable.logger = conditionalizeLogger(this.#loggable);
-      }
-    }
+    logger = mapValues(
+      shake(logger, (p) => !isFunction(p)) as Record<string, LoggerEndpoint>,
+      (value, key) =>
+        (...args: unknown[]): unknown =>
+          this.loggableOptions.disabled?.includes(key) &&
+          !this.loggableOptions.enableAll
+            ? undefined
+            : value(...args),
+    ) as Methods<Logger>;
   };
 }

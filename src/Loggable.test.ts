@@ -12,6 +12,7 @@ const winstonInfoStub = stub(winston, 'info');
 const winstonErrorStub = stub(winston, 'error');
 
 import { Loggable } from './Loggable';
+import { LoggableOptions } from './LoggableOptions';
 
 describe('loggable', function () {
   describe('console', function () {
@@ -27,10 +28,10 @@ describe('loggable', function () {
         constructor(public bar = 'baz') {
           super();
 
-          this.loggable.logger.debug('debug');
-          this.loggable.logger.log('log');
-          this.loggable.logger.info('info');
-          this.loggable.logger.error('error');
+          this.logger.debug('debug');
+          this.logger.log('log');
+          this.logger.info('info');
+          this.logger.error('error');
         }
       }
 
@@ -42,15 +43,17 @@ describe('loggable', function () {
       expect(consoleErrorStub.calledOnce).to.be.true;
     });
 
-    it('should hide configured internal logs', function () {
-      class Foo extends Loggable(undefined, { internal: ['debug', 'log'] }) {
+    it('should hide disabled logs', function () {
+      class Foo extends Loggable(undefined, console, {
+        disabled: ['debug', 'log'],
+      }) {
         constructor(public bar = 'baz') {
           super();
 
-          this.loggable.logger.debug('debug');
-          this.loggable.logger.log('log');
-          this.loggable.logger.info('info');
-          this.loggable.logger.error('error');
+          this.logger.debug('debug');
+          this.logger.log('log');
+          this.logger.info('info');
+          this.logger.error('error');
         }
       }
 
@@ -62,18 +65,18 @@ describe('loggable', function () {
       expect(consoleErrorStub.calledOnce).to.be.true;
     });
 
-    it('should log internals', function () {
-      class Foo extends Loggable(undefined, {
-        internal: ['debug', 'log'],
-        logInternals: true,
+    it('should enable all', function () {
+      class Foo extends Loggable(undefined, console, {
+        disabled: ['debug', 'log'],
+        enableAll: true,
       }) {
         constructor(public bar = 'baz') {
           super();
 
-          this.loggable.logger.debug('debug');
-          this.loggable.logger.log('log');
-          this.loggable.logger.info('info');
-          this.loggable.logger.error('error');
+          this.logger.debug('debug');
+          this.logger.log('log');
+          this.logger.info('info');
+          this.logger.error('error');
         }
       }
 
@@ -94,13 +97,13 @@ describe('loggable', function () {
     });
 
     it('should log to winston', function () {
-      class Foo extends Loggable(undefined, { logger: winston }) {
+      class Foo extends Loggable(undefined, winston) {
         constructor(public bar = 'baz') {
           super();
 
-          this.loggable.logger.debug('debug');
-          this.loggable.logger.info('info');
-          this.loggable.logger.error('error');
+          this.logger.debug('debug');
+          this.logger.info('info');
+          this.logger.error('error');
         }
       }
 
@@ -111,17 +114,16 @@ describe('loggable', function () {
       expect(winstonErrorStub.calledOnce).to.be.true;
     });
 
-    it('should hide configured internal logs', function () {
-      class Foo extends Loggable(undefined, {
-        internal: ['debug', 'info'],
-        logger: winston,
+    it('should hide disabled logs', function () {
+      class Foo extends Loggable(undefined, winston, {
+        disabled: ['debug', 'info'],
       }) {
         constructor(public bar = 'baz') {
           super();
 
-          this.loggable.logger.debug('debug');
-          this.loggable.logger.info('info');
-          this.loggable.logger.error('error');
+          this.logger.debug('debug');
+          this.logger.info('info');
+          this.logger.error('error');
         }
       }
 
@@ -132,18 +134,17 @@ describe('loggable', function () {
       expect(winstonErrorStub.calledOnce).to.be.true;
     });
 
-    it('should log internals', function () {
-      class Foo extends Loggable(undefined, {
-        internal: ['debug', 'info'],
-        logger: winston,
-        logInternals: true,
+    it('should enable all', function () {
+      class Foo extends Loggable(undefined, winston, {
+        disabled: ['debug', 'info'],
+        enableAll: true,
       }) {
         constructor(public bar = 'baz') {
           super();
 
-          this.loggable.logger.debug('debug');
-          this.loggable.logger.info('info');
-          this.loggable.logger.error('error');
+          this.logger.debug('debug');
+          this.logger.info('info');
+          this.logger.error('error');
         }
       }
 
@@ -156,36 +157,55 @@ describe('loggable', function () {
   });
 
   describe('dynamic', function () {
-    beforeEach(function () {
-      consoleDebugStub.resetHistory();
-      consoleLogStub.resetHistory();
-      consoleInfoStub.resetHistory();
-      consoleErrorStub.resetHistory();
-    });
-
     it('should support settings change', function () {
       class Foo extends Loggable() {
         constructor(public bar = 'baz') {
           super();
 
-          this.loggable.logger.debug('debug');
-          this.loggable.logger.info('info');
-          this.loggable.logger.error('error');
+          this.logger.debug('debug');
+          this.logger.info('info');
+          this.logger.error('error');
         }
       }
 
       const foo = new Foo();
 
-      foo.setLoggable({ logInternals: true });
+      foo.loggableOptions.enableAll = true;
 
       consoleDebugStub.resetHistory();
       consoleLogStub.resetHistory();
       consoleInfoStub.resetHistory();
       consoleErrorStub.resetHistory();
 
-      foo.loggable.logger.debug('debug');
+      foo.logger.debug('debug');
 
       expect(consoleDebugStub.calledOnce).to.be.true;
+    });
+
+    it('should support generic class', function () {
+      function MyClass<Logger = Console>(
+        logger: Logger = console as Logger,
+        options?: LoggableOptions,
+      ) {
+        return class extends Loggable(undefined, logger, options) {
+          myMethod() {
+            this.logger.debug('debug log');
+            this.logger.info('info log');
+          }
+        };
+      }
+
+      winstonDebugStub.resetHistory();
+      winstonInfoStub.resetHistory();
+      winstonErrorStub.resetHistory();
+
+      const myInstance = new (MyClass(winston))();
+      myInstance.myMethod();
+      myInstance.logger.error('error log');
+
+      expect(winstonDebugStub.calledOnce).to.be.false;
+      expect(winstonInfoStub.calledOnce).to.be.true;
+      expect(winstonErrorStub.calledOnce).to.be.true;
     });
   });
 });
