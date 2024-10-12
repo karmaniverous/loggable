@@ -102,7 +102,7 @@ import winston from 'winston';
 // This function returns an anonymous class that extends Loggable.
 function MyGenericClass<Logger = Console>(
   logger: Logger = console as Logger,
-  options?: LoggableOptions, // Use Loggable's default options if none provided.
+  options: Partial<LoggableOptions> = {},
 ) {
   // The anonymous class extends Loggable with the provided logger & options.
   return class extends Loggable(undefined, logger, options) {

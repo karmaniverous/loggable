@@ -10,27 +10,34 @@ import type { Methods } from './Methods';
  *
  * @param Base - Base class (defaults to empty class).
  * @param logger - Logger object (defaults to `console`).
- * @param options - LoggableOptions object (defaults to `{ disabled: ['debug'] }`).
+ * @param loggableOptions - Partial {@link LoggableOptions | `LoggableOptions`} object.
  *
  * @returns Loggable class.
+ *
+ * @remarks
+ * `loggableOptions` object is merged with default options:
+ * - `disabled`: []
+ * - `enableAll`: false
  */
 export function Loggable<T extends Constructor<object>, Logger = Console>(
-  // eslint-disable-next-line @typescript-eslint/no-extraneous-class
   Base: T = class {} as T,
   logger: Logger = console as Logger,
-  options: LoggableOptions = {
-    disabled: ['debug'],
-    enableAll: false,
-  },
+  loggableOptions: Partial<LoggableOptions> = {},
 ) {
   return class extends Base {
-    loggableOptions = options;
+    loggableOptions: LoggableOptions = Object.assign(
+      { disabled: [], enableAll: false },
+      loggableOptions,
+    );
 
+    /**
+     * External logger interface. Methods are disabled and return `undefined` when method included in `disabled` array and `enableAll !== true`.
+     */
     logger = mapValues(
       shake(logger, (p) => !isFunction(p)) as Record<string, LoggerEndpoint>,
       (value, key) =>
         (...args: unknown[]): unknown =>
-          this.loggableOptions.disabled?.includes(key) &&
+          this.loggableOptions.disabled.includes(key) &&
           !this.loggableOptions.enableAll
             ? undefined
             : value(...args),

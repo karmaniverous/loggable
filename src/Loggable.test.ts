@@ -37,7 +37,7 @@ describe('loggable', function () {
 
       new Foo();
 
-      expect(consoleDebugStub.calledOnce).to.be.false;
+      expect(consoleDebugStub.calledOnce).to.be.true;
       expect(consoleLogStub.calledOnce).to.be.true;
       expect(consoleInfoStub.calledOnce).to.be.true;
       expect(consoleErrorStub.calledOnce).to.be.true;
@@ -109,7 +109,7 @@ describe('loggable', function () {
 
       new Foo();
 
-      expect(winstonDebugStub.calledOnce).to.be.false;
+      expect(winstonDebugStub.calledOnce).to.be.true;
       expect(winstonInfoStub.calledOnce).to.be.true;
       expect(winstonErrorStub.calledOnce).to.be.true;
     });
@@ -185,7 +185,7 @@ describe('loggable', function () {
     it('should support generic class', function () {
       function MyClass<Logger = Console>(
         logger: Logger = console as Logger,
-        options?: LoggableOptions,
+        options: Partial<LoggableOptions> = {},
       ) {
         return class extends Loggable(undefined, logger, options) {
           myMethod() {
@@ -199,7 +199,7 @@ describe('loggable', function () {
       winstonInfoStub.resetHistory();
       winstonErrorStub.resetHistory();
 
-      const myInstance = new (MyClass(winston))();
+      const myInstance = new (MyClass(winston, { disabled: ['debug'] }))();
       myInstance.myMethod();
       myInstance.logger.error('error log');
 
