@@ -15,7 +15,7 @@ import type { Methods } from './Methods';
  * @returns Loggable class.
  *
  * @remarks
- * `loggableOptions` object is merged with default options:
+ * The `loggableOptions` parameter is merged with the following default options and exposed at `this.loggableOptions`:
  * - `disabled`: []
  * - `enableAll`: false
  */
