@@ -30,7 +30,9 @@
   },
   "searchInComments": true,
   "searchInDocuments": true,
-  "titleLink": "https://github.com/karmaniverous/loggable",
+  "sidebarLinks": {
+    "GitHub Repo": "https://github.com/karmaniverous/loggabe"
+  },
   "visibilityFilters": {
     "external": false,
     "protected": false

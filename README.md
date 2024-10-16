@@ -1,3 +1,5 @@
+> **This library is deprecated in favor of [@karmaniverous/controlled-proxy](https://github.com/karmaniverous/controlled-proxy), which takes a much more generic and SOLID approach to the problem. See [this article](https://karmanivero.us/blog/mixin-it-up-picking-the-right-problem-to-solve/) for an analysis of the issues with the mixin approach.**
+
 # Loggable Mixin
 
 **Logging is an implementation decision that should be deferred as late as possible.**
